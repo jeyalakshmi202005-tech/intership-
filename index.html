@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InternX – Internship Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --bg2: #111318;
+    --bg3: #181c24;
+    --card: #1a1f2b;
+    --border: #252c3b;
+    --accent: #4f8fff;
+    --accent2: #00e5b0;
+    --accent-glow: rgba(79,143,255,0.18);
+    --text: #e8eaf0;
+    --text2: #8a93a8;
+    --text3: #4a5265;
+    --danger: #ff5c6a;
+    --success: #00e5b0;
+    --shadow: 0 8px 40px rgba(0,0,0,0.45);
+    --radius: 14px;
+    --transition: 0.22s cubic-bezier(.4,0,.2,1);
+  }
+  [data-theme="light"] {
+    --bg: #f0f4fb;
+    --bg2: #e4eaf5;
+    --bg3: #d8e2f3;
+    --card: #ffffff;
+    --border: #c8d3e8;
+    --accent: #2563eb;
+    --accent2: #059669;
+    --accent-glow: rgba(37,99,235,0.12);
+    --text: #1a2235;
+    --text2: #4b5a77;
+    --text3: #9aa4bc;
+    --danger: #e03c4a;
+    --success: #059669;
+    --shadow: 0 8px 40px rgba(80,100,160,0.13);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background var(--transition), color var(--transition);
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: .6;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+  .page.active { display: flex; flex-direction: column; animation: fadeUp .4s ease forwards; }
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(18px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── NAVBAR ── */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 36px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem; font-weight: 800;
+    background: linear-gradient(120deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .nav-right { display: flex; align-items: center; gap: 14px; }
+  .nav-user {
+    font-size: .85rem; color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: 700; color: #fff;
+  }
+
+  /* ── THEME TOGGLE ── */
+  .theme-btn {
+    width: 44px; height: 24px;
+    background: var(--border);
+    border-radius: 999px;
+    border: none; cursor: pointer;
+    position: relative;
+    transition: background var(--transition);
+    flex-shrink: 0;
+  }
+  .theme-btn::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    transition: transform var(--transition), background var(--transition);
+  }
+  [data-theme="light"] .theme-btn::after { transform: translateX(20px); }
+  .theme-label { font-size: .78rem; color: var(--text2); }
+
+  .logout-btn {
+    padding: 7px 16px; border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: .82rem; cursor: pointer;
+    transition: all var(--transition);
+  }
+  .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ══════════════════════════════════════
+     PAGE 1 — LOGIN
+  ══════════════════════════════════════ */
+  #page-login {
+    justify-content: center; align-items: center;
+    min-height: 100vh;
+    background: var(--bg);
+  }
+  .login-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 900px; width: 94%;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: var(--shadow), 0 0 0 1px var(--border);
+  }
+  .login-left {
+    background: linear-gradient(145deg, #0f1628 0%, #111c35 60%, #0d2040 100%);
+    padding: 56px 44px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: relative; overflow: hidden;
+  }
+  [data-theme="light"] .login-left {
+    background: linear-gradient(145deg, #1a3a7a 0%, #2255b5 100%);
+  }
+  .login-left::before {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(79,143,255,.22) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .login-left::after {
+    content: '';
+    position: absolute; bottom: -40px; left: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(0,229,176,.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .login-brand { position: relative; z-index: 1; }
+  .login-logo {
+    font-family: 'Syne', sans-serif; font-size: 2.4rem; font-weight: 800;
+    background: linear-gradient(120deg, #4f8fff, #00e5b0);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+  .login-tagline { color: rgba(255,255,255,.55); font-size: .95rem; line-height: 1.6; }
+  .login-stats {
+    display: flex; gap: 24px; position: relative; z-index: 1;
+  }
+  .stat { text-align: left; }
+  .stat-num {
+    font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+    color: var(--accent2);
+  }
+  .stat-label { font-size: .78rem; color: rgba(255,255,255,.45); margin-top: 2px; }
+
+  .login-right {
+    background: var(--card);
+    padding: 52px 44px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .login-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.7rem; font-weight: 700;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .login-sub { color: var(--text2); font-size: .9rem; margin-bottom: 36px; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-group label {
+    display: block; font-size: .82rem; font-weight: 500;
+    color: var(--text2); margin-bottom: 8px; letter-spacing: .3px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 13px 16px;
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: .95rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .form-group input::placeholder { color: var(--text3); }
+  .form-group select option { background: var(--card); }
+  .form-group textarea { resize: vertical; min-height: 90px; }
+
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .btn-primary {
+    width: 100%; padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 10px;
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 1rem; font-weight: 700;
+    cursor: pointer; letter-spacing: .3px;
+    transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .btn-primary:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 8px 28px var(--accent-glow); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .error-msg {
+    background: rgba(255,92,106,.12);
+    border: 1px solid rgba(255,92,106,.3);
+    color: var(--danger);
+    padding: 11px 14px; border-radius: 8px;
+    font-size: .84rem; margin-bottom: 18px;
+    display: none;
+  }
+
+  /* ══════════════════════════════════════
+     PAGE 2 — COMPANIES
+  ══════════════════════════════════════ */
+  .page-content { flex: 1; padding: 36px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+  .page-header { margin-bottom: 32px; }
+  .page-header h1 {
+    font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .page-header p { color: var(--text2); font-size: .95rem; }
+
+  .search-bar {
+    display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .search-input {
+    flex: 1; min-width: 220px;
+    padding: 12px 18px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: .92rem;
+    outline: none; transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .filter-select {
+    padding: 12px 18px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: .92rem;
+    outline: none; cursor: pointer; transition: border-color var(--transition);
+  }
+  .filter-select:focus { border-color: var(--accent); }
+
+  .companies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 20px;
+  }
+  .company-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    cursor: pointer;
+    position: relative; overflow: hidden;
+  }
+  .company-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0; transition: opacity var(--transition);
+  }
+  .company-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--accent); }
+  .company-card:hover::before { opacity: 1; }
+
+  .company-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .company-logo {
+    width: 50px; height: 50px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .company-info h3 {
+    font-family: 'Syne', sans-serif; font-size: 1.05rem;
+    font-weight: 700; margin-bottom: 2px;
+  }
+  .company-info span { font-size: .78rem; color: var(--text2); }
+
+  .company-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    padding: 4px 10px; border-radius: 999px;
+    font-size: .72rem; font-weight: 500; letter-spacing: .2px;
+    background: var(--bg3); color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .tag.accent { background: var(--accent-glow); color: var(--accent); border-color: rgba(79,143,255,.25); }
+
+  .company-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .meta-item { display: flex; flex-direction: column; }
+  .meta-label { font-size: .7rem; color: var(--text3); margin-bottom: 2px; letter-spacing: .3px; text-transform: uppercase; }
+  .meta-val { font-size: .88rem; font-weight: 500; color: var(--text); }
+
+  .apply-btn {
+    padding: 9px 20px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 8px;
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: .82rem; font-weight: 700;
+    cursor: pointer;
+    transition: opacity var(--transition), transform var(--transition);
+  }
+  .apply-btn:hover { opacity: .88; transform: scale(1.04); }
+
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 999px;
+    font-size: .7rem; font-weight: 600;
+  }
+  .badge-open { background: rgba(0,229,176,.12); color: var(--accent2); }
+  .badge-closed { background: rgba(255,92,106,.12); color: var(--danger); }
+
+  /* ══════════════════════════════════════
+     PAGE 3 — APPLY FORM
+  ══════════════════════════════════════ */
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 9px;
+    border: 1.5px solid var(--border);
+    background: transparent; color: var(--text2);
+    font-family: 'DM Sans', sans-serif; font-size: .88rem;
+    cursor: pointer; margin-bottom: 28px;
+    transition: all var(--transition);
+  }
+  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .apply-wrap {
+    display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start;
+  }
+  .apply-form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 36px;
+  }
+  .apply-form-card h2 {
+    font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .apply-form-card p { color: var(--text2); font-size: .88rem; margin-bottom: 28px; }
+
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 700;
+    color: var(--accent); letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 16px; margin-top: 24px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .radio-option {
+    flex: 1; min-width: 100px;
+    padding: 11px 14px;
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: center;
+  }
+  .radio-option input { display: none; }
+  .radio-option span { font-size: .88rem; color: var(--text2); font-weight: 500; }
+  .radio-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+  .radio-option.selected span { color: var(--accent); }
+
+  .progress-bar {
+    height: 4px; background: var(--border); border-radius: 999px;
+    margin-bottom: 28px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 999px; transition: width .4s ease;
+  }
+
+  /* Company summary card */
+  .company-summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px; padding: 28px;
+    position: sticky; top: 84px;
+  }
+  .company-summary h3 {
+    font-family: 'Syne', sans-serif; font-size: 1.05rem; font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .summary-logo {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; margin-bottom: 14px;
+  }
+  .summary-list { list-style: none; }
+  .summary-list li {
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: .85rem;
+  }
+  .summary-list li:last-child { border-bottom: none; }
+  .summary-list .key { color: var(--text2); }
+  .summary-list .val { font-weight: 500; color: var(--text); }
+
+  /* ── SUCCESS STATE ── */
+  .success-screen {
+    display: none; flex-direction: column; align-items: center;
+    text-align: center; padding: 60px 20px;
+  }
+  .success-screen.show { display: flex; animation: fadeUp .5s ease forwards; }
+  .success-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; margin-bottom: 24px;
+    box-shadow: 0 0 40px var(--accent-glow);
+    animation: pulse 2s ease infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 30px var(--accent-glow); }
+    50% { box-shadow: 0 0 60px var(--accent-glow); }
+  }
+  .success-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.8rem; margin-bottom: 10px; }
+  .success-screen p { color: var(--text2); font-size: .95rem; line-height: 1.7; max-width: 420px; }
+  .app-id {
+    display: inline-block; margin-top: 18px;
+    padding: 8px 20px; border-radius: 8px;
+    background: var(--bg3); border: 1px solid var(--border);
+    font-family: monospace; font-size: .9rem; color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 760px) {
+    .login-wrap { grid-template-columns: 1fr; }
+    .login-left { display: none; }
+    nav { padding: 14px 18px; }
+    .page-content { padding: 20px 16px; }
+    .apply-wrap { grid-template-columns: 1fr; }
+    .company-summary { position: static; }
+    .input-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ PAGE 1: LOGIN ══════════════ -->
+<div id="page-login" class="page active">
+  <div class="login-wrap">
+    <div class="login-left">
+      <div class="login-brand">
+        <div class="login-logo">InternX</div>
+        <p class="login-tagline">Your launchpad to the best internships.<br>Apply smarter. Get hired faster.</p>
+      </div>
+      <div class="login-stats">
+        <div class="stat"><div class="stat-num">500+</div><div class="stat-label">Companies</div></div>
+        <div class="stat"><div class="stat-num">12K+</div><div class="stat-label">Students</div></div>
+        <div class="stat"><div class="stat-num">95%</div><div class="stat-label">Placement</div></div>
+      </div>
+    </div>
+    <div class="login-right">
+      <h2 class="login-title">Welcome back 👋</h2>
+      <p class="login-sub">Sign in to access your internship dashboard</p>
+      <div id="loginError" class="error-msg">❌ Please enter both username and password.</div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="username" placeholder="Enter your username"/>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter your password"/>
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Sign In →</button>
+      <div style="margin-top:18px; text-align:center; font-size:.8rem; color:var(--text3);">
+        Enter any username & password to continue
+      </div>
+      <!-- theme toggle on login -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:24px;">
+        <span class="theme-label">🌙 Dark</span>
+        <button class="theme-btn" id="loginThemeBtn" onclick="toggleTheme()"></button>
+        <span class="theme-label">☀️ Light</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE 2: COMPANIES ══════════════ -->
+<div id="page-companies" class="page">
+  <nav>
+    <div class="logo">InternX</div>
+    <div class="nav-right">
+      <span class="theme-label" style="font-size:.78rem;color:var(--text2)">🌙</span>
+      <button class="theme-btn" onclick="toggleTheme()"></button>
+      <span class="theme-label" style="font-size:.78rem;color:var(--text2)">☀️</span>
+      <div class="nav-user">
+        <div class="avatar" id="navAvatar">A</div>
+        <span id="navUser">Admin</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+  <div class="page-content">
+    <div class="page-header">
+      <h1>🏢 Internship Opportunities</h1>
+      <p>Browse top companies and apply for your dream internship</p>
+    </div>
+    <div class="search-bar">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍  Search companies or roles…" oninput="filterCompanies()"/>
+      <select class="filter-select" id="domainFilter" onchange="filterCompanies()">
+        <option value="">All Domains</option>
+        <option>Computer Science</option>
+        <option>Data Science</option>
+        <option>Electronics</option>
+        <option>Mechanical</option>
+        <option>Civil</option>
+        <option>MBA / Management</option>
+        <option>Design / UI-UX</option>
+      </select>
+      <select class="filter-select" id="stipendFilter" onchange="filterCompanies()">
+        <option value="">All Stipends</option>
+        <option>₹5,000+</option>
+        <option>₹10,000+</option>
+        <option>₹15,000+</option>
+      </select>
+    </div>
+    <div class="companies-grid" id="companiesGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE 3: APPLY ══════════════ -->
+<div id="page-apply" class="page">
+  <nav>
+    <div class="logo">InternX</div>
+    <div class="nav-right">
+      <span class="theme-label" style="font-size:.78rem;color:var(--text2)">🌙</span>
+      <button class="theme-btn" onclick="toggleTheme()"></button>
+      <span class="theme-label" style="font-size:.78rem;color:var(--text2)">☀️</span>
+      <div class="nav-user">
+        <div class="avatar" id="navAvatar2">A</div>
+        <span id="navUser2">Admin</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+  <div class="page-content">
+    <button class="back-btn" onclick="goBack()">← Back to Companies</button>
+    <div id="applyContent"></div>
+  </div>
+</div>
+
+<script>
+  // ── DATA ──────────────────────────────────────────
+  // No fixed credentials — any username + password works
+
+  const COMPANIES = [
+    { id:1, name:'TCS – Tata Consultancy', short:'TCS', domain:'Computer Science', sector:'IT Services', logo:'🔷', color:'#0a5baf', stipend:'₹15,000', duration:'3 Months', slots:20, status:'open', tags:['Software Dev','AI/ML','Testing'] },
+    { id:2, name:'Infosys Limited', short:'INF', domain:'Computer Science', sector:'IT Services', logo:'🟦', color:'#007cc5', stipend:'₹12,000', duration:'2 Months', slots:15, status:'open', tags:['Web Dev','Cloud','Java'] },
+    { id:3, name:'ISRO – Space Research', short:'ISRO', domain:'Electronics', sector:'Government', logo:'🚀', color:'#e05c00', stipend:'₹8,000', duration:'6 Weeks', slots:5, status:'open', tags:['Embedded','Aerospace','VLSI'] },
+    { id:4, name:'Zoho Corporation', short:'ZHO', domain:'Computer Science', sector:'SaaS', logo:'🟩', color:'#27ae60', stipend:'₹18,000', duration:'3 Months', slots:10, status:'open', tags:['Product Dev','Full Stack','SaaS'] },
+    { id:5, name:'Amazon India', short:'AMZ', domain:'Data Science', sector:'E-Commerce', logo:'📦', color:'#ff9900', stipend:'₹25,000', duration:'2 Months', slots:8, status:'open', tags:['Data Analysis','AWS','Python'] },
+    { id:6, name:'BHEL Engineering', short:'BHL', domain:'Mechanical', sector:'Manufacturing', logo:'⚙️', color:'#7f6000', stipend:'₹7,000', duration:'6 Weeks', slots:12, status:'open', tags:['CAD','Manufacturing','Design'] },
+    { id:7, name:'HDFC Bank', short:'HDF', domain:'MBA / Management', sector:'Banking', logo:'🏦', color:'#004c9e', stipend:'₹10,000', duration:'2 Months', slots:7, status:'open', tags:['Finance','Analytics','CRM'] },
+    { id:8, name:'Swiggy Technology', short:'SWG', domain:'Design / UI-UX', sector:'Food Tech', logo:'🍜', color:'#fc8019', stipend:'₹20,000', duration:'3 Months', slots:4, status:'open', tags:['UI/UX','Figma','Research'] },
+    { id:9, name:'L&T Construction', short:'LNT', domain:'Civil', sector:'Infrastructure', logo:'🏗️', color:'#5d4e37', stipend:'₹6,000', duration:'8 Weeks', slots:10, status:'closed', tags:['AutoCAD','Site Work','Structural'] },
+    { id:10, name:'Wipro Technologies', short:'WIP', domain:'Computer Science', sector:'IT Services', logo:'💜', color:'#9b4dca', stipend:'₹14,000', duration:'3 Months', slots:18, status:'open', tags:['DevOps','Testing','Automation'] },
+    { id:11, name:'ITC Limited', short:'ITC', domain:'MBA / Management', sector:'FMCG', logo:'🌿', color:'#2d7a3c', stipend:'₹12,000', duration:'2 Months', slots:6, status:'open', tags:['Marketing','Supply Chain','Brand'] },
+    { id:12, name:'Samsung R&D', short:'SMS', domain:'Electronics', sector:'Consumer Tech', logo:'📱', color:'#1428a0', stipend:'₹22,000', duration:'3 Months', slots:9, status:'open', tags:['IoT','Firmware','5G'] },
+  ];
+
+  let currentUser = '';
+  let currentCompany = null;
+
+  // ── THEME ─────────────────────────────────────────
+  function toggleTheme() {
+    const html = document.documentElement;
+    html.setAttribute('data-theme', html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  }
+
+  // ── LOGIN ─────────────────────────────────────────
+  function doLogin() {
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
+    const err = document.getElementById('loginError');
+    if (u && p) {
+      currentUser = u;
+      err.style.display = 'none';
+      document.getElementById('navUser').textContent = u.charAt(0).toUpperCase() + u.slice(1);
+      document.getElementById('navUser2').textContent = u.charAt(0).toUpperCase() + u.slice(1);
+      document.getElementById('navAvatar').textContent = u.charAt(0).toUpperCase();
+      document.getElementById('navAvatar2').textContent = u.charAt(0).toUpperCase();
+      renderCompanies(COMPANIES);
+      showPage('page-companies');
+    } else {
+      err.style.display = 'block';
+      document.getElementById('password').value = '';
+    }
+  }
+
+  // Enter key on login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('page-login').classList.contains('active')) doLogin();
+  });
+
+  function doLogout() {
+    currentUser = '';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+    showPage('page-login');
+  }
+
+  // ── PAGE NAV ──────────────────────────────────────
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function goBack() { showPage('page-companies'); }
+
+  // ── COMPANIES ─────────────────────────────────────
+  function renderCompanies(list) {
+    const grid = document.getElementById('companiesGrid');
+    if (!list.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text2)">
+        <div style="font-size:2.5rem;margin-bottom:12px">🔍</div>
+        <p>No companies match your search. Try different filters.</p></div>`;
+      return;
+    }
+    grid.innerHTML = list.map(c => `
+      <div class="company-card" onclick="openApply(${c.id})">
+        <div class="company-top">
+          <div class="company-logo" style="background:${c.color}22;color:${c.color};font-size:1.5rem">${c.logo}</div>
+          <div class="company-info">
+            <h3>${c.name}</h3>
+            <span>${c.sector}</span>
+          </div>
+        </div>
+        <div class="company-tags">
+          ${c.tags.map((t,i) => `<span class="tag${i===0?' accent':''}">${t}</span>`).join('')}
+          <span class="tag">${c.domain}</span>
+        </div>
+        <div class="company-meta">
+          <div class="meta-item">
+            <span class="meta-label">Stipend</span>
+            <span class="meta-val" style="color:var(--accent2)">${c.stipend}/mo</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Duration</span>
+            <span class="meta-val">${c.duration}</span>
+          </div>
+          <div>
+            ${c.status === 'open'
+              ? `<span class="badge badge-open">● Open</span>`
+              : `<span class="badge badge-closed">● Closed</span>`}
+          </div>
+          ${c.status === 'open'
+            ? `<button class="apply-btn" onclick="event.stopPropagation();openApply(${c.id})">Apply →</button>`
+            : `<button class="apply-btn" style="opacity:.4;cursor:not-allowed">Closed</button>`}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function filterCompanies() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const domain = document.getElementById('domainFilter').value;
+    const stip = document.getElementById('stipendFilter').value;
+    let filtered = COMPANIES.filter(c => {
+      const matchQ = !q || c.name.toLowerCase().includes(q) || c.tags.some(t => t.toLowerCase().includes(q)) || c.domain.toLowerCase().includes(q);
+      const matchD = !domain || c.domain === domain;
+      const matchS = !stip || parseInt(c.stipend.replace(/[^\d]/g,'')) >= parseInt(stip.replace(/[^\d]/g,''));
+      return matchQ && matchD && matchS;
+    });
+    renderCompanies(filtered);
+  }
+
+  // ── APPLY FORM ────────────────────────────────────
+  function openApply(id) {
+    currentCompany = COMPANIES.find(c => c.id === id);
+    if (!currentCompany || currentCompany.status !== 'open') return;
+
+    document.getElementById('applyContent').innerHTML = `
+      <div class="apply-wrap">
+        <div>
+          <div class="apply-form-card" id="formCard">
+            <h2>Apply for Internship</h2>
+            <p>Fill in your details below. All fields marked * are required.</p>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:10%"></div></div>
+
+            <div class="section-title">Personal Information</div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="fullname" placeholder="Your full name" oninput="updateProgress()"/>
+              </div>
+              <div class="form-group">
+                <label>Date of Birth *</label>
+                <input type="date" id="dob" oninput="updateProgress()"/>
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" id="email" placeholder="you@email.com" oninput="updateProgress()"/>
+              </div>
+              <div class="form-group">
+                <label>Phone Number *</label>
+                <input type="tel" id="phone" placeholder="+91 99999 99999" oninput="updateProgress()"/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Current Address</label>
+              <textarea id="address" placeholder="Your current city / address…"></textarea>
+            </div>
+
+            <div class="section-title">Academic Details</div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>College / University *</label>
+                <input type="text" id="college" placeholder="Institution name" oninput="updateProgress()"/>
+              </div>
+              <div class="form-group">
+                <label>Roll Number *</label>
+                <input type="text" id="rollno" placeholder="Reg / Roll no." oninput="updateProgress()"/>
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>Degree / Programme *</label>
+                <select id="degree" onchange="updateProgress()">
+                  <option value="">Select degree</option>
+                  <option>B.E / B.Tech</option>
+                  <option>B.Sc</option>
+                  <option>B.Com</option>
+                  <option>BCA</option>
+                  <option>MBA / PGDM</option>
+                  <option>M.Tech</option>
+                  <option>MCA</option>
+                  <option>Diploma</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Branch / Specialisation *</label>
+                <input type="text" id="branch" placeholder="e.g. Computer Science" oninput="updateProgress()"/>
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>Current Year *</label>
+                <select id="year" onchange="updateProgress()">
+                  <option value="">Select year</option>
+                  <option>1st Year</option>
+                  <option>2nd Year</option>
+                  <option>3rd Year</option>
+                  <option>Final Year</option>
+                  <option>Post Graduate</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>CGPA / Percentage *</label>
+                <input type="text" id="cgpa" placeholder="e.g. 8.5 or 85%" oninput="updateProgress()"/>
+              </div>
+            </div>
+
+            <div class="section-title">Internship Preferences</div>
+            <div class="form-group">
+              <label>Which course / role are you applying for? *</label>
+              <select id="role" onchange="updateProgress()">
+                <option value="">Select internship role</option>
+                ${currentCompany.tags.map(t => `<option>${t}</option>`).join('')}
+                <option>General Internship</option>
+              </select>
+            </div>
+            <div class="input-row">
+              <div class="form-group">
+                <label>Preferred Start Date *</label>
+                <input type="date" id="startdate" oninput="updateProgress()"/>
+              </div>
+              <div class="form-group">
+                <label>Mode of Internship</label>
+                <div class="radio-group" id="modeGroup">
+                  <label class="radio-option selected" onclick="selectMode(this)"><input type="radio" name="mode" value="Remote" checked/><span>🏠 Remote</span></label>
+                  <label class="radio-option" onclick="selectMode(this)"><input type="radio" name="mode" value="Onsite"/><span>🏢 Onsite</span></label>
+                  <label class="radio-option" onclick="selectMode(this)"><input type="radio" name="mode" value="Hybrid"/><span>🔄 Hybrid</span></label>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-title">Skills & Motivation</div>
+            <div class="form-group">
+              <label>Key Skills (comma separated)</label>
+              <input type="text" id="skills" placeholder="e.g. Python, React, SQL, Figma"/>
+            </div>
+            <div class="form-group">
+              <label>Why do you want this internship? *</label>
+              <textarea id="motivation" placeholder="Tell us in 2–3 sentences why you are a great fit…" oninput="updateProgress()"></textarea>
+            </div>
+            <div class="form-group">
+              <label>LinkedIn / GitHub Profile URL</label>
+              <input type="url" id="profileurl" placeholder="https://linkedin.com/in/yourname"/>
+            </div>
+
+            <div id="formError" class="error-msg">⚠️ Please fill all required fields (*) before submitting.</div>
+
+            <button class="btn-primary" onclick="submitApplication()" style="margin-top:8px">
+              Submit Application →
+            </button>
+          </div>
+
+          <!-- SUCCESS -->
+          <div class="success-screen" id="successScreen">
+            <div class="success-icon">✅</div>
+            <h2>Application Submitted!</h2>
+            <p>Your internship application to <strong>${currentCompany.name}</strong> has been successfully received. Our team will review and contact you within 5–7 working days.</p>
+            <div class="app-id" id="appId"></div>
+            <button class="btn-primary" style="max-width:260px;margin-top:28px" onclick="goBack()">← Browse More Companies</button>
+          </div>
+        </div>
+
+        <!-- SIDEBAR -->
+        <div class="company-summary">
+          <div class="summary-logo" style="background:${currentCompany.color}22">${currentCompany.logo}</div>
+          <h3>${currentCompany.name}</h3>
+          <p style="color:var(--text2);font-size:.82rem;margin-bottom:16px">${currentCompany.sector}</p>
+          <ul class="summary-list">
+            <li><span class="key">Domain</span><span class="val">${currentCompany.domain}</span></li>
+            <li><span class="key">Stipend</span><span class="val" style="color:var(--accent2)">${currentCompany.stipend}/mo</span></li>
+            <li><span class="key">Duration</span><span class="val">${currentCompany.duration}</span></li>
+            <li><span class="key">Open Slots</span><span class="val">${currentCompany.slots}</span></li>
+            <li><span class="key">Status</span><span class="val badge badge-open">● Open</span></li>
+          </ul>
+          <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <div style="font-size:.72rem;color:var(--text3);margin-bottom:8px;letter-spacing:.3px;text-transform:uppercase">Roles Available</div>
+            ${currentCompany.tags.map(t => `<span class="tag" style="display:inline-block;margin:3px">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    showPage('page-apply');
+  }
+
+  function selectMode(el) {
+    document.querySelectorAll('.radio-option').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  const REQUIRED = ['fullname','dob','email','phone','college','rollno','degree','branch','year','cgpa','role','startdate','motivation'];
+
+  function updateProgress() {
+    const filled = REQUIRED.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.value.trim() !== '';
+    }).length;
+    const pct = Math.round((filled / REQUIRED.length) * 100);
+    const bar = document.getElementById('progressFill');
+    if (bar) bar.style.width = pct + '%';
+  }
+
+  function submitApplication() {
+    const missing = REQUIRED.filter(id => {
+      const el = document.getElementById(id);
+      return !el || el.value.trim() === '';
+    });
+    const errEl = document.getElementById('formError');
+    if (missing.length > 0) {
+      errEl.style.display = 'block';
+      document.getElementById(missing[0]).focus();
+      return;
+    }
+    errEl.style.display = 'none';
+    document.getElementById('formCard').style.display = 'none';
+    const appId = 'INTX-' + Date.now().toString(36).toUpperCase().slice(-6);
+    document.getElementById('appId').textContent = 'Application ID: ' + appId;
+    document.getElementById('successScreen').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
